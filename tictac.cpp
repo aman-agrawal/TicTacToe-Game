@@ -120,7 +120,7 @@ void game()
 			draw_board();
 		}
 	}
-	if(i<0)
+	if(i==0)
 		cout<<"Game Tie"<<endl;
 	cout<<"Scores"<<endl<<"-------"<<endl;
 	cout<<"Player1 : "<<player1score<<endl;
