@@ -2,8 +2,12 @@
 using namespace std;
 
 char board[3][3]={{'1','2','3'},{'4','5','6'},{'7','8','9'}};
+//player vs player
 int player1score=0;
 int player2score=0;
+//computer vs player
+int playerscore=0;
+int computerscore=0;
 
 void draw_board()
 {
@@ -22,7 +26,7 @@ void draw_board()
 	cout<<endl<<endl;
 }
 
-bool fill_grid(int pos,char choice)
+pair<int,int> getRowCol(int pos)
 {
 	int row,col;
 	if(pos%3==0)
@@ -35,6 +39,13 @@ bool fill_grid(int pos,char choice)
 		row=pos/3;
 		col=pos%3 -1;
 	}
+	return {row,col};
+}
+
+bool fill_grid(int pos,char choice)
+{
+	pair<int,int>p=getRowCol(pos);
+	int row=p.first,col=p.second;
 	if(board[row][col]!='O' && board[row][col]!='X')
 	{
 		board[row][col]=choice;
@@ -103,14 +114,18 @@ void game()
 					player1score++;
 				else
 					player2score++;
-				i--;
 				break;
 			}
 
 			if(choice=='O')
 				choice='X';
-			else
+			else if(choice=='O')
 				choice='O';
+			else
+			{
+				cout<<"Wrong choice, choose either 'O' or 'X'"<<endl;
+				game();
+			}
 
 			if(player==1)
 				player=2;
@@ -127,10 +142,225 @@ void game()
 	cout<<"Player2 : "<<player2score<<endl<<endl;
 }
 
+int evaluate()
+{
+	char player = 'X';
+	char opponent = 'O';
+
+    for (int row = 0; row<3; row++)
+    {
+        if (board[row][0]==board[row][1] && board[row][1]==board[row][2])
+        {
+            if (board[row][0]==player)
+                return -10;
+            else if (board[row][0]==opponent)
+                return 10;
+        }
+    }
+ 
+    for (int col = 0; col<3; col++)
+    {
+        if (board[0][col]==board[1][col] && board[1][col]==board[2][col])
+        {
+            if (board[0][col]==player)
+                return -10;
+ 
+            else if (board[0][col]==opponent)
+                return 10;
+        }
+    }
+    if (board[0][0]==board[1][1] && board[1][1]==board[2][2])
+    {
+        if (board[0][0]==player)
+            return -10;
+        else if (board[0][0]==opponent)
+            return 10;
+    }
+ 
+    if (board[0][2]==board[1][1] && board[1][1]==board[2][0])
+    {
+        if (board[0][2]==player)
+            return -10;
+        else if (board[0][2]==opponent)
+            return 10;
+    }
+ 
+    return 0;
+}
+
+bool isMovesLeft()
+{
+    for (int i = 0; i<3; i++)
+    {
+        for (int j = 0; j<3; j++)
+        {
+            if (board[i][j]==3*i+j+1)
+                return true;
+        }
+    }
+    return false;
+}
+
+int minimax(bool isMax)
+{
+    int score = evaluate();
+    char player = 'X';
+	char opponent = 'O';
+ 
+    if (score == 10 || score == -10)
+        return score;
+
+    if (isMovesLeft()==false)
+        return 0;
+ 
+    if (!isMax)
+    {
+        int best = 1000;
+ 
+        for (int i = 0; i<3; i++)
+        {
+            for (int j = 0; j<3; j++)
+            {
+                if (board[i][j]!='O' && board[i][j]!='X')
+                {
+                    board[i][j] = player;
+ 
+                    best = min( best,minimax(!isMax) );
+ 
+                    board[i][j] = 3*i + j + 1;
+                }
+            }
+        }
+        return best;
+    }
+ 
+    else
+    {
+        int best = -1000;
+ 
+        for (int i = 0; i<3; i++)
+        {
+            for (int j = 0; j<3; j++)
+            {
+                if (board[i][j]!='O' && board[i][j]!='X')
+                {
+                    board[i][j] = opponent;
+ 
+                    best = max(best,minimax(!isMax));
+
+                    board[i][j] = 3*i + j + 1;
+                }
+            }
+        }
+        return best;
+    }
+}
+
+int findBestMove()
+{
+    int bestVal = -1000, bestMove = -1;
+ 
+    for (int i = 0; i<3; i++)
+    {
+        for (int j = 0; j<3; j++)
+        {
+            if(board[i][j]!='O' && board[i][j]!='X')
+            {
+                board[i][j] = 'O';
+                int moveVal = minimax(false);
+                board[i][j] = 3*i + j + 1;
+                if (moveVal > bestVal)
+                {
+                	bestMove = 3*i + j + 1;
+                    bestVal = moveVal;
+                }
+            }
+        }
+    }
+ 
+    cout<<"Computer chooses : "<<bestMove<<endl;
+    return bestMove;
+}
+
+void computer()
+{
+	int i=9;
+	int position;
+	bool player=true;
+	reset_board();
+	draw_board();
+	while(i--)
+	{	
+		if(player==true)
+		{
+			cout<<"Player turn : Enter your position : "<<endl;
+			cin>>position;
+	
+			if(!fill_grid(position,'X'))
+			{
+				i++;
+				cout<<"Already Occupied, choose different position"<<endl;
+			}
+			else
+			{
+				if(check_winner())
+				{
+					draw_board();
+					cout<<"Player has won"<<endl;
+					playerscore++;
+					break;
+				}
+				player=false;
+				draw_board();
+			}
+		}
+		else
+		{
+			position = findBestMove();
+			if(!fill_grid(position,'O'))
+			{
+				i++;
+				cout<<"Already Occupied, choose different position"<<endl;
+			}
+			else
+			{
+				if(check_winner())
+				{
+					draw_board();
+					cout<<"Computer has won"<<endl;
+					computerscore++;
+					break;
+				}
+				player=true;
+				draw_board();
+			}
+		}
+	}
+	if(i==0)
+		cout<<"Game Tie"<<endl;
+	cout<<"Scores"<<endl<<"-------"<<endl;
+	cout<<"Player : "<<playerscore<<endl;
+	cout<<"Computer : "<<computerscore<<endl<<endl;
+}
+
+
+
 int main()
 {
+	int mode;
 	while(1)
 	{
-		game();
+		cout<<"choose : 1 for player vs player and 2 for computer vs player"<<endl;
+		cin>>mode;
+		if(mode==1)
+			game();
+		else if(mode==2)
+		{
+			cout<<"Player sign : 'X'"<<endl;
+			cout<<"Computer sign : 'O'"<<endl;
+			computer();
+		}
+		else
+			cout<<"Wrong mode choosen"<<endl;
 	}
 }
